@@ -1,21 +1,34 @@
 cmake_minimum_required(VERSION 3.20)
 project(vic_mpc CXX)
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+# Default RPATH so binaries find FetchContent'd MuJoCo at runtime without
+# the user setting DYLD_LIBRARY_PATH.
+set(CMAKE_INSTALL_RPATH_USE_LINK_PATH ON)
+if(APPLE)
+  set(CMAKE_MACOSX_RPATH ON)
+  set(CMAKE_BUILD_RPATH_USE_ORIGIN ON)
+  list(APPEND CMAKE_INSTALL_RPATH "@loader_path/../lib")
+endif()
+
+# ----------------------------------------------------------------------------
+# Eigen3: when FETCH_MUJOCO=ON, MuJoCo's CMake fetches Eigen3 itself and
+# creates the Eigen3::Eigen imported target. Declaring it here too triggers
+# a duplicate-target error, so we let MuJoCo own it in that case. When using
+# a prebuilt MuJoCo, we have to find Eigen ourselves.
+# ----------------------------------------------------------------------------
+
 # ----------------------------------------------------------------------------
 # MuJoCo
-#
-# Two ways to point CMake at MuJoCo:
-#   1) Install the official prebuilt release into ~/mujoco-3.x.x and pass
-#        -DMUJOCO_DIR=$HOME/mujoco-3.x.x
-#      to cmake. This is the fastest path on macOS.
-#   2) Let FetchContent build it from source (slow first build, ~5 min).
-#      Run cmake with -DFETCH_MUJOCO=ON.
+#   1) -DMUJOCO_DIR=$HOME/mujoco-3.x.x  uses a prebuilt release.
+#   2) -DFETCH_MUJOCO=ON                builds from source (and provides
+#                                       libmujoco_simulate for the viewer).
+# Default for vic-mpc: FETCH_MUJOCO=ON because we want the simulate viewer.
 # ----------------------------------------------------------------------------
-option(FETCH_MUJOCO "Build MuJoCo from source via FetchContent" OFF)
+option(FETCH_MUJOCO "Build MuJoCo from source via FetchContent" ON)
 
 if(FETCH_MUJOCO)
   include(FetchContent)
@@ -25,15 +38,13 @@ if(FETCH_MUJOCO)
     GIT_TAG        3.8.0
   )
   set(MUJOCO_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
-  # ON: build libmujoco_simulate so we can embed the official viewer UI.
   set(MUJOCO_BUILD_SIMULATE ON  CACHE BOOL "" FORCE)
   set(MUJOCO_BUILD_TESTS    OFF CACHE BOOL "" FORCE)
   FetchContent_MakeAvailable(mujoco)
 else()
   if(NOT DEFINED MUJOCO_DIR)
     message(FATAL_ERROR
-      "Set -DMUJOCO_DIR=/path/to/mujoco (the unpacked release) "
-      "or pass -DFETCH_MUJOCO=ON to build from source.")
+      "Set -DMUJOCO_DIR=/path/to/mujoco or pass -DFETCH_MUJOCO=ON.")
   endif()
   add_library(mujoco::mujoco SHARED IMPORTED)
   if(APPLE)
@@ -45,50 +56,19 @@ else()
       IMPORTED_LOCATION             "${MUJOCO_DIR}/lib/libmujoco.so.3.8.0"
       INTERFACE_INCLUDE_DIRECTORIES "${MUJOCO_DIR}/include")
   endif()
-  add_library(mujoco ALIAS mujoco::mujoco)
 endif()
 
-# GLFW for the viewer example. On macOS: brew install glfw
-# When FETCH_MUJOCO is ON the simulate sub-build will fetch its own GLFW too,
-# so the local find_package is only consulted in the prebuilt path.
-find_package(glfw3 QUIET)
-find_package(Threads REQUIRED)
-
-# ----------------------------------------------------------------------------
-# Examples
-# ----------------------------------------------------------------------------
-# Bake the absolute models dir into the binaries so the default path works
-# regardless of which directory the user launches them from.
-set(DEFAULT_MODEL "${CMAKE_SOURCE_DIR}/models/cartpole.xml")
-
-add_executable(01_load_step src/01_load_step.cpp)
-target_link_libraries(01_load_step PRIVATE mujoco::mujoco)
-target_compile_definitions(01_load_step PRIVATE DEFAULT_MODEL="${DEFAULT_MODEL}")
-
-add_executable(03_pd_control src/03_pd_control.cpp)
-target_link_libraries(03_pd_control PRIVATE mujoco::mujoco)
-target_compile_definitions(03_pd_control PRIVATE DEFAULT_MODEL="${DEFAULT_MODEL}")
-
-# 02_viewer embeds MuJoCo's official `simulate` viewer (passive mode), so it
-# needs libmujoco_simulate. That target only exists in the FETCH_MUJOCO build,
-# since the prebuilt release ships it as a separate component we don't wire up.
-if(TARGET mujoco::libmujoco_simulate)
-  add_executable(02_viewer src/02_viewer.cpp)
-  target_link_libraries(02_viewer PRIVATE
-    mujoco::mujoco
-    mujoco::libmujoco_simulate
-    glfw
-    Threads::Threads)
-  target_compile_definitions(02_viewer PRIVATE DEFAULT_MODEL="${DEFAULT_MODEL}")
-  if(APPLE)
-    # CoreVideo is needed by simulate's GlfwCoreVideo; the framework is a
-    # PUBLIC link of platform_ui_adapter (an OBJECT lib) so it doesn't
-    # propagate transitively through libmujoco_simulate. Add it directly.
-    target_link_libraries(02_viewer PRIVATE
-      "-framework OpenGL" "-framework Cocoa" "-framework IOKit"
-      "-framework CoreVideo")
-  endif()
-else()
-  message(STATUS "libmujoco_simulate not available — skipping 02_viewer "
-                 "(rebuild with -DFETCH_MUJOCO=ON)")
+# After MuJoCo loads, Eigen3::Eigen may already be defined (MuJoCo's
+# FetchContent path creates it). If not (prebuilt MuJoCo, or MuJoCo's
+# find_package found Eigen but didn't re-export the target), find it ourselves.
+if(NOT TARGET Eigen3::Eigen)
+  find_package(Eigen3 REQUIRED NO_MODULE)
 endif()
+
+# ----------------------------------------------------------------------------
+# Subpackages (mirror examples/wb_humanoid_mpc layout).
+# ----------------------------------------------------------------------------
+add_subdirectory(robot_runtime/robot_core)
+add_subdirectory(robot_runtime/robot_model)
+add_subdirectory(humanoid_nmpc/remote_control)
+add_subdirectory(robot_runtime/mujoco_sim_interface)
