@@ -1,0 +1,33 @@
+# Build output
+build/
+examples/
+build-*/
+
+# In-source CMake leftovers (in case someone configures at root by mistake)
+/CMakeCache.txt
+/CMakeFiles/
+/Makefile
+/cmake_install.cmake
+/compile_commands.json
+/_deps/
+/ccd-targets.cmake
+
+# Editor / OS
+.DS_Store
+.vscode/
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+.idea/
+*.swp
+
+# Python venvs (in case anything Python sneaks in)
+.venv/
+__pycache__/
+.cache/
+
+# Documentation and Figures 
+papers/ 
+
+# Models and Private Data
+models/
