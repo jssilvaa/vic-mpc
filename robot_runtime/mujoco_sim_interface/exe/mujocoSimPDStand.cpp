@@ -74,7 +74,7 @@ int main(int argc, char* argv[]) {
     std::cerr << "Usage: " << argv[0] << " <scene.xml> <robot.urdf>\n"
               << "Example:\n"
               << "  " << argv[0]
-              << " models/unitree_g1/g1_description/urdf/g1_scene.xml"
+              << " models/unitree_g1/g1_description/urdf/g1_29dof.xml"
               << " models/unitree_g1/g1_description/urdf/g1_29dof.urdf\n";
     return 1;
   }

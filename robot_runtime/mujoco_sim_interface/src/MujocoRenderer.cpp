@@ -98,8 +98,9 @@ MujocoRenderer::MujocoRenderer(const MujocoSimInterface* simInterface)
     : simInterface_(simInterface),
       simState_(simInterface_->getModel()),
       timeStepMicro_(1e6 / simInterface_->getConfig().renderFrequencyHz) {
-  mujocoScene_.flags[mjRND_SHADOW] = 1;
-  mujocoScene_.flags[mjRND_REFLECTION] = 1;
+  // Scene flags are applied in initialize() *after* mjv_defaultScene(), which
+  // otherwise wipes them. Reference impl sets them here and silently loses
+  // them — that's why shadows/reflections never appeared.
 }
 
 MujocoRenderer::~MujocoRenderer() {
@@ -250,6 +251,11 @@ void MujocoRenderer::initialize() {
   mujocoOptions_.flags[mjVIS_CONTACTFORCE] = 0;
   mujocoOptions_.flags[mjVIS_COM] = 0;
   mujocoOptions_.flags[mjVIS_INERTIA] = 0;
+
+  // Scene-level rendering flags must be set *after* mjv_defaultScene(), which
+  // zeros the flags array.
+  mujocoScene_.flags[mjRND_SHADOW] = 1;
+  mujocoScene_.flags[mjRND_REFLECTION] = 1;
 
   glfwSetWindowUserPointer(window_, this);
   glfwSetKeyCallback(window_, keyboard);

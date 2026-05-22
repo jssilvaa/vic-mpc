@@ -63,8 +63,8 @@ class MujocoSimInterface : public robot::model::RobotHWInterfaceBase {
   MujocoSimConfig config_;
 
   model::RobotState robotStateInternal_;
-  mjtNum* qpos_init_;
-  mjtNum* qvel_init_;
+  mjtNum* qpos_init_{nullptr};
+  mjtNum* qvel_init_{nullptr};
   model::RobotJointAction robotJointActionInternal_;
 
   size_t timeStepMicro_;
@@ -80,7 +80,7 @@ class MujocoSimInterface : public robot::model::RobotHWInterfaceBase {
   mjData* mujocoData_ = nullptr;
   mjContact* mujocoContact_ = nullptr;
 
-  bool simInit_;
+  bool simInit_{false};
   const bool headless_;
   const bool verbose_;
   std::atomic<bool> terminate_{false};
@@ -94,11 +94,12 @@ class MujocoSimInterface : public robot::model::RobotHWInterfaceBase {
   std::chrono::high_resolution_clock::time_point lastRealTime_;
   Metrics metrics_{};
 
-  size_t right_foot_sensor_addr_;
-  size_t left_foot_sensor_addr_;
-
-  size_t right_foot_touch_sensor_addr_;
-  size_t left_foot_touch_sensor_addr_;
+  // Sentinel value when the matching sensor isn't present in the MJCF.
+  static constexpr size_t kInvalidSensorAddr = static_cast<size_t>(-1);
+  size_t right_foot_sensor_addr_{kInvalidSensorAddr};
+  size_t left_foot_sensor_addr_{kInvalidSensorAddr};
+  size_t right_foot_touch_sensor_addr_{kInvalidSensorAddr};
+  size_t left_foot_touch_sensor_addr_{kInvalidSensorAddr};
 };
 
 }  // namespace robot::mujoco_sim_interface

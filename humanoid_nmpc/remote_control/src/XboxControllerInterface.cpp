@@ -30,8 +30,7 @@ double normTrigger(Sint16 raw) {
 
 }  // namespace
 
-XboxControllerInterface::XboxControllerInterface(double publisher_rate_hz)
-    : publisher_rate_hz_(publisher_rate_hz) {
+XboxControllerInterface::XboxControllerInterface() {
   if (SDL_Init(SDL_INIT_GAMECONTROLLER) != 0) {
     std::cerr << "[XboxControllerInterface] SDL_Init failed: " << SDL_GetError() << std::endl;
     return;
@@ -115,10 +114,17 @@ bool XboxControllerInterface::poll(ocs2::humanoid::WalkingVelocityCommand& cmd) 
   cmd.linear_velocity_y = raw_y_left;
   cmd.angular_velocity_z = raw_y_right;
 
-  // Integrate trigger differential into pelvis height target.
+  // Integrate trigger differential into pelvis height target using the actual
+  // elapsed time between polls (in [m/s] of trigger range). First poll seeds
+  // the timestamp without integrating.
   const double pelvis_height_vel = rt - lt;
-  current_pelvis_height_target_ += pelvis_height_vel / publisher_rate_hz_;
-  current_pelvis_height_target_ = std::clamp(current_pelvis_height_target_, min_pelvis_height_, max_pelvis_height_);
+  const auto now = std::chrono::steady_clock::now();
+  if (lastPollTime_.has_value()) {
+    const double dt = std::chrono::duration<double>(now - *lastPollTime_).count();
+    current_pelvis_height_target_ += pelvis_height_vel * dt;
+    current_pelvis_height_target_ = std::clamp(current_pelvis_height_target_, min_pelvis_height_, max_pelvis_height_);
+  }
+  lastPollTime_ = now;
   cmd.desired_pelvis_height = current_pelvis_height_target_;
 
   return true;

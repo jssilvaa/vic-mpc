@@ -9,16 +9,17 @@
 #include <SDL.h>
 
 #include <chrono>
-#include <string>
+#include <optional>
 
 namespace robot::remote_control {
 
 class XboxControllerInterface {
  public:
-  // Matches the Python interface's publisher_rate argument (used to scale the
-  // pelvis-height increment per poll). Default 25 Hz matches the reference's
-  // ROS2 timer.
-  explicit XboxControllerInterface(double publisher_rate_hz = 25.0);
+  // The Python interface took a publisher_rate_hz to scale the per-poll
+  // pelvis-height increment; we measure elapsed time inside poll() instead so
+  // the caller's actual loop rate is what's used (the Python version
+  // double-counted when the loop ran at a different rate than declared).
+  XboxControllerInterface();
   ~XboxControllerInterface();
 
   XboxControllerInterface(const XboxControllerInterface&) = delete;
@@ -42,7 +43,9 @@ class XboxControllerInterface {
   double min_pelvis_height_ = 0.2;
   double max_pelvis_height_ = 1.0;
 
-  double publisher_rate_hz_;
+  // Last poll() timestamp for trapezoidal integration of trigger differential.
+  // std::nullopt on first poll so the first sample doesn't integrate a huge dt.
+  std::optional<std::chrono::steady_clock::time_point> lastPollTime_;
 
   // Throttle the rescan to once per second so a disconnected controller doesn't
   // hammer SDL on every poll.

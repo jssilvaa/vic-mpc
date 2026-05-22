@@ -226,24 +226,30 @@ void MujocoSimInterface::simulationStep() {
         jointAction.getTotalFeedbackTorque(robotStateInternal_.getJointPosition(idx), robotStateInternal_.getJointVelocity(idx));
   }
 
-  mujocoMutex_.lock();
-  mj_step(mujocoModel_, mujocoData_);
-  updateThreadSafeRobotState();
-  updateMetrics();
-
-  // Auto-reset if the robot collapses.
-  if (mujocoData_->qpos[2] < 0.2) {
-    reset();
-    for (size_t i = 0; i < nActuators_; ++i) mujocoData_->ctrl[i] = 0.0;
+  bool collapsed = false;
+  {
+    std::lock_guard<std::mutex> guard(mujocoMutex_);
     mj_step(mujocoModel_, mujocoData_);
     updateThreadSafeRobotState();
-    simFps_.reset();
-    metrics_.reset();
     updateMetrics();
-    mujocoMutex_.unlock();
-    std::this_thread::sleep_until(std::chrono::steady_clock::now() + std::chrono::microseconds(1000000));
-  } else {
-    mujocoMutex_.unlock();
+
+    // Auto-reset if the robot collapses.
+    if (mujocoData_->qpos[2] < 0.2) {
+      reset();
+      for (size_t i = 0; i < nActuators_; ++i) mujocoData_->ctrl[i] = 0.0;
+      mj_step(mujocoModel_, mujocoData_);
+      updateThreadSafeRobotState();
+      simFps_.reset();
+      metrics_.reset();
+      updateMetrics();
+      collapsed = true;
+    }
+  }
+
+  // Sleep after releasing the mutex so the renderer can keep drawing during the
+  // 1 s settle pause.
+  if (collapsed) {
+    std::this_thread::sleep_for(std::chrono::seconds(1));
   }
 }
 
