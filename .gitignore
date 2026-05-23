@@ -29,3 +29,6 @@ __pycache__/
 
 # Documentation and Figures 
 papers/
+
+# Solver deps scratch
+/external/

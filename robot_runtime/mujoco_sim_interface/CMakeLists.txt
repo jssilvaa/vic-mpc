@@ -36,3 +36,18 @@ target_link_libraries(mujocoSimPDStand PRIVATE
   remote_control)
 set_target_properties(mujocoSimPDStand PROPERTIES
   RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+
+# Reference baseline sibling: zero-torque sim (robot falls + auto-resets).
+add_executable(mujocoSimNoTorques exe/mujocoSimNoTorques.cpp)
+target_link_libraries(mujocoSimNoTorques PRIVATE robot::mujoco_sim_interface)
+set_target_properties(mujocoSimNoTorques PROPERTIES
+  RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+
+# D1 validation gate: cross-check Pinocchio M/J/bias against MuJoCo.
+add_executable(pinocchioCrossCheck exe/pinocchioCrossCheck.cpp)
+target_link_libraries(pinocchioCrossCheck PRIVATE
+  robot::mujoco_sim_interface
+  humanoid::common_mpc
+  PkgConfig::pinocchio)
+set_target_properties(pinocchioCrossCheck PROPERTIES
+  RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)

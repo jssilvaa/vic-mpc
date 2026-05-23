@@ -27,14 +27,9 @@ class ThreadSafe {
     value = value_;
   }
 
-  void set(const T& new_value) {
+  void set(T new_value) {
     std::lock_guard<std::mutex> lock(mutex_);
-    value_ = new_value;
-  }
-
-  void set(T&& new_value) {
-    std::lock_guard<std::mutex> lock(mutex_);
-    value_ = new_value;
+    value_ = std::move(new_value);
   }
 
  private:

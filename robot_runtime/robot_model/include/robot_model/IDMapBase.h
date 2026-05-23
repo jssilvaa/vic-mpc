@@ -53,7 +53,7 @@ class IDMapBase {
     return vector;
   }
 
-  bool inRange(size_t id) const noexcept { return id <= map_elements_.size(); }
+  bool inRange(size_t id) const noexcept { return id < map_elements_.size(); }
 
   size_t size() const {
     return std::count_if(begin(), end(), [](const std::optional<T>& opt) { return opt.has_value(); });

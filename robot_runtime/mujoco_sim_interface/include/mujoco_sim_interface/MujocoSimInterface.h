@@ -51,6 +51,14 @@ class MujocoSimInterface : public robot::model::RobotHWInterfaceBase {
   const mjModel* getModel() const { return mujocoModel_; }
   const MujocoSimConfig& getConfig() const { return config_; }
 
+  // Inspection hooks for offline tools (e.g. pinocchioCrossCheck) that drive the
+  // sim single-threaded: perturb qpos/qvel, mj_forward, then read qM/qfrc_bias.
+  // Not for use while the sim thread is running.
+  mjData* getData() { return mujocoData_; }
+  // Refresh the thread-safe RobotState snapshot from the current mjData (so
+  // getRobotState() reflects a pose set directly on mjData + mj_forward).
+  void syncStateFromData() { updateThreadSafeRobotState(); }
+
  private:
   void setupJointIndexMaps();
   void setSimState(const model::RobotState& robotState);

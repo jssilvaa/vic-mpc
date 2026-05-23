@@ -71,4 +71,7 @@ endif()
 add_subdirectory(robot_runtime/robot_core)
 add_subdirectory(robot_runtime/robot_model)
 add_subdirectory(humanoid_nmpc/remote_control)
+# humanoid_common_mpc before mujoco_sim_interface: the pinocchioCrossCheck exe in
+# the latter links humanoid::common_mpc, so the alias must already exist.
+add_subdirectory(humanoid_nmpc/humanoid_common_mpc)
 add_subdirectory(robot_runtime/mujoco_sim_interface)
