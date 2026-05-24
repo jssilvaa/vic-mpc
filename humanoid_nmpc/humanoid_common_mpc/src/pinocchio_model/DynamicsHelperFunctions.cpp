@@ -2,7 +2,7 @@
 
 
 #include "humanoid_common_mpc/common/Types.h"
-#include "humanoid_common_mpc/pinocchio_model/PinocchioInterface.h"
+#include "ocs2_pinocchio_interface/PinocchioInterface.h"
 #include "humanoid_common_mpc/pinocchio_model/DynamicsHelperFunctions.h"
 
 

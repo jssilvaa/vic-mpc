@@ -7,6 +7,13 @@
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 
+// Base type aliases (scalar_t, vector_t, matrix_t, *_array_t) and the function
+// approximation structs come from the transplanted ocs2_core, mirroring the
+// reference's humanoid Types.h which includes <ocs2_core/Types.h>.
+// (The reference also includes <ocs2_core/automatic_differentiation/Types.h> for
+//  the ad_* aliases — deferred until CppAD is wired in.)
+#include <ocs2_core/Types.h>
+
 namespace ocs2 {
   
   template <typename SCALAR_T> 
@@ -32,10 +39,8 @@ namespace ocs2 {
   template <typename SCALAR_T> 
   using QUATERNION_T = Eigen::Quaternion<SCALAR_T>; 
 
-  using scalar_t = double;
-  // Dynamic-size aliases (in the reference these come from ocs2_core/Types.h).
-  using vector_t = VECTOR_T<scalar_t>;
-  using matrix_t = MATRIX_T<scalar_t>;
+  // scalar_t, vector_t, matrix_t (and the *_array_t aliases) now come from
+  // <ocs2_core/Types.h>. Below are the humanoid-specific fixed-size aliases.
   using vector2_t = VECTOR2_T<scalar_t>;
   using vector3_t = VECTOR3_T<scalar_t>;
   using vector4_t = VECTOR4_T<scalar_t>;

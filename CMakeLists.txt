@@ -71,7 +71,16 @@ endif()
 add_subdirectory(robot_runtime/robot_core)
 add_subdirectory(robot_runtime/robot_model)
 add_subdirectory(humanoid_nmpc/remote_control)
+# ocs2_core (transplanted substrate) before humanoid_common_mpc, which includes
+# <ocs2_core/Types.h> and links ocs2::core.
+# Transplanted OCS2 substrate (CppAD/ROS-free subset), grouped under lib/ to keep
+# the top level our-code-only (mirrors the reference's lib/ocs2_ros2/ grouping).
+add_subdirectory(lib/ocs2/ocs2_core)
+add_subdirectory(lib/ocs2/ocs2_robotic_tools)
+add_subdirectory(lib/ocs2/ocs2_pinocchio_interface)
+add_subdirectory(lib/ocs2/ocs2_centroidal_model)
 # humanoid_common_mpc before mujoco_sim_interface: the pinocchioCrossCheck exe in
 # the latter links humanoid::common_mpc, so the alias must already exist.
 add_subdirectory(humanoid_nmpc/humanoid_common_mpc)
+add_subdirectory(humanoid_nmpc/humanoid_centroidal_mpc)
 add_subdirectory(robot_runtime/mujoco_sim_interface)

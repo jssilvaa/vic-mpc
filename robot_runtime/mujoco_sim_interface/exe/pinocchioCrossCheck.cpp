@@ -110,7 +110,7 @@ int main(int argc, char* argv[]) {
   sim.initSim();
 
   // ---- §2 Pinocchio interface ----
-  auto pin = ocs2::createDefaultPinocchioInterface(urdfPath);
+  auto pin = ocs2::humanoid::createDefaultPinocchioInterface(urdfPath);
   const auto& model = pin.getModel();
   auto& data = pin.getData();
   const mjModel* m = sim.getModel();

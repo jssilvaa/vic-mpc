@@ -6,8 +6,10 @@
 
 #include <robot_core/Types.h>  // joint_index_t
 
+#include <ocs2_robotic_tools/common/RotationDerivativesTransforms.h>  // getEulerAnglesZyxDerivativesFromLocalAngularVelocity
+
 #include "humanoid_common_mpc/common/Types.h"
-#include "humanoid_common_mpc/pinocchio_model/PinocchioInterface.h"
+#include "ocs2_pinocchio_interface/PinocchioInterface.h"
 
 namespace robot::model { class RobotState; }
 
@@ -30,19 +32,11 @@ namespace ocs2::humanoid {
     return vector3_t(yaw, pitch, roll);
   }
 
-  template <typename SCALAR_T> 
-  VECTOR3_T<SCALAR_T> getEulerAnglesZyxDerivativesFromLocalAngularVelocity(
-    const VECTOR3_T<SCALAR_T>& eulerZYX, 
-    const VECTOR3_T<SCALAR_T>& omega_local) {
-
-      SCALAR_T yaw_rate, pitch_rate, roll_rate;
-
-      yaw_rate = (std::sin(eulerZYX[2]) * omega_local[1] + std::cos(eulerZYX[2]) * omega_local[2]) / std::cos(eulerZYX[1]);
-      pitch_rate = std::cos(eulerZYX[2]) * omega_local[1] - std::sin(eulerZYX[2]) * omega_local[2];
-      roll_rate = omega_local[0] + std::tan(eulerZYX[1]) * (std::sin(eulerZYX[2]) * omega_local[1] + std::cos(eulerZYX[2]) * omega_local[2]);
-
-      return VECTOR3_T<SCALAR_T>(yaw_rate, pitch_rate, roll_rate);
-    }
+  // getEulerAnglesZyxDerivativesFromLocalAngularVelocity now comes from
+  // <ocs2_robotic_tools/common/RotationDerivativesTransforms.h> (namespace ocs2);
+  // it was hand-written here during D1 and is identical to the upstream math.
+  // quaternionToEulerZYX stays here — this (humanoid DynamicsHelperFunctions.h) is
+  // its reference home.
 
   // Fills plain Pinocchio (q, v) generalized coordinates from a RobotState.
   //   q = [pos(3), eulerZYX(3), joints],  v = [linVel_world(3), eulerZyxRate(3), jointVel].
